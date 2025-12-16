@@ -18,6 +18,16 @@ A tiny project skeleton that demonstrates how to build an MLIR-based toy dialect
 
 ## Configure & Build
 
+There is an available Docker image on Wormhole server so user just need to run:
+
+```bash
+./scripts/docker_run.sh
+```
+
+And a container with name **mlir-tutorial-<USER_NAME>** will be ready to used.
+
+Commands to build the repo:
+
 ```bash
 apt-get update
 apt-get install -y zlib1g-dev libtinfo-dev libedit-dev libxml2-dev
@@ -32,13 +42,13 @@ The configuration step automatically adds the Toy dialect library (`toy-dialect`
 
 ## Run the Example Pipeline
 
-1. Build the project (generates `build/bin/toy-opt`).
+1. Build the project (generates `build/tools/toy-opt`).
 2. (Optional) Source your MLIR environment for extra tooling like `mlir-translate`.
 3. Execute the helper script:
    ```bash
    ./examples/pipeline.sh
    ```
-  The script feeds `examples/intro.toy` into `toy-opt`, executes the Toy pipeline (`toy-shape-inference`, `toy-canonicalize`), and prints each IR stage. Extend it to finish the lowering story.
+  The script feeds `examples/intro.toy` into `toy-opt`, executes the Toy pipeline (`toy-shape-inference`, `toy-canonicalize`, ...), and prints each IR stage.
 
 ## Learning Objectives
 
