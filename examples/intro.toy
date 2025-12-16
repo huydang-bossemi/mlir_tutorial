@@ -1,0 +1,5 @@
+func.func @main(%lhs: tensor<?xf64>, %rhs: tensor<?xf64>) -> tensor<?xf64> {
+  %sum = "toy.add"(%lhs, %rhs) : (tensor<?xf64>, tensor<?xf64>) -> tensor<?xf64>
+  %prod = "toy.mul"(%sum, %rhs) : (tensor<?xf64>, tensor<?xf64>) -> tensor<?xf64>
+  return %prod : tensor<?xf64>
+}
