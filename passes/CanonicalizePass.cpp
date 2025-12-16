@@ -1,14 +1,11 @@
-//===- CanonicalizePass.cpp - Toy canonicalization pass ------------------===//
-//
-// Canonicalization pass for the Toy dialect.
-//
-//===----------------------------------------------------------------------===//
+#include "ToyCanonicalizePass.h"
 
-#include "toy/Transforms/Passes.h"
-#include "toy/ToyDialect.h"
 #include "toy/ToyOps.h"
+
+#include "mlir/IR/BuiltinOps.h"
 #include "mlir/IR/PatternMatch.h"
 #include "mlir/Pass/Pass.h"
+#include "mlir/Pass/PassRegistry.h"
 #include "mlir/Transforms/GreedyPatternRewriteDriver.h"
 
 using namespace mlir;
@@ -17,14 +14,12 @@ using namespace toy;
 namespace {
 
 struct ToyCanonicalizePass
-    : public PassWrapper<ToyCanonicalizePass, OperationPass<>> {
-  
+    : public PassWrapper<ToyCanonicalizePass, OperationPass<ModuleOp>> {
   MLIR_DEFINE_EXPLICIT_INTERNAL_INLINE_TYPE_ID(ToyCanonicalizePass)
 
-  StringRef getArgument() const final { return "toy-canonicalize"; }
-  
-  StringRef getDescription() const final {
-    return "Canonicalize Toy dialect operations";
+  llvm::StringRef getArgument() const final { return "toy-canonicalize"; }
+  llvm::StringRef getDescription() const final {
+    return "Canonicalize Toy ops";
   }
 
   void runOnOperation() override {
@@ -42,18 +37,13 @@ struct ToyCanonicalizePass
     }
   }
 };
-
-} // namespace
+}
 
 std::unique_ptr<Pass> toy::createToyCanonicalizePass() {
   return std::make_unique<ToyCanonicalizePass>();
 }
 
 void toy::detail::registerToyCanonicalizePass() {
-  PassRegistration<ToyCanonicalizePass>();
-}
-
-void toy::registerToyPasses() {
-  detail::registerToyShapeInferencePass();
-  detail::registerToyCanonicalizePass();
+  static PassRegistration<ToyCanonicalizePass> canonicalizeReg;
+  (void)canonicalizeReg;
 }

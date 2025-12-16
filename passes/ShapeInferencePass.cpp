@@ -1,31 +1,24 @@
-//===- ShapeInferencePass.cpp - Toy shape inference pass -----------------===//
-//
-// Shape inference pass for the Toy dialect.
-//
-//===----------------------------------------------------------------------===//
+#include "ToyShapeInferencePass.h"
 
-#include "toy/Transforms/Passes.h"
-#include "toy/ToyDialect.h"
 #include "toy/ToyOps.h"
+
+#include "mlir/IR/Builders.h"
 #include "mlir/IR/BuiltinOps.h"
+#include "mlir/IR/BuiltinTypes.h"
 #include "mlir/Pass/Pass.h"
-#include "mlir/Pass/PassManager.h"
 #include "mlir/Pass/PassRegistry.h"
 
 using namespace mlir;
 using namespace toy;
 
 namespace {
-
 struct ToyShapeInferencePass
-    : public PassWrapper<ToyShapeInferencePass, OperationPass<ModuleOp>> {
-  
+    : public mlir::PassWrapper<ToyShapeInferencePass, OperationPass<ModuleOp>> {
   MLIR_DEFINE_EXPLICIT_INTERNAL_INLINE_TYPE_ID(ToyShapeInferencePass)
 
-  StringRef getArgument() const final { return "toy-shape-inference"; }
-  
-  StringRef getDescription() const final {
-    return "Infer shapes for Toy dialect operations";
+  llvm::StringRef getArgument() const final { return "toy-shape-inference"; }
+  llvm::StringRef getDescription() const final {
+    return "Infer shapes for Toy ops";
   }
 
   void runOnOperation() override {
@@ -38,7 +31,6 @@ struct ToyShapeInferencePass
     });
   }
 };
-
 } // namespace
 
 std::unique_ptr<Pass> toy::createToyShapeInferencePass() {
@@ -47,14 +39,4 @@ std::unique_ptr<Pass> toy::createToyShapeInferencePass() {
 
 void toy::detail::registerToyShapeInferencePass() {
   PassRegistration<ToyShapeInferencePass>();
-}
-
-void toy::registerToyPassPipelines() {
-  PassPipelineRegistration<>(
-      "toy-full",
-      "Run the full Toy optimization pipeline",
-      [](OpPassManager &pm) {
-        pm.addPass(createToyShapeInferencePass());
-        pm.addPass(createToyCanonicalizePass());
-      });
 }

@@ -1,47 +1,28 @@
-//===- ToyOps.td - Toy dialect ops -------------------------*- tablegen -*-===//
-//
-// Defines operations for the Toy dialect.
-//
-//===----------------------------------------------------------------------===//
-
 #ifndef TOY_OPS_TD
 #define TOY_OPS_TD
 
+include "mlir/IR/OpBase.td"
 include "ToyDialect.td"
-include "mlir/Interfaces/SideEffectInterfaces.td"
 
-//===----------------------------------------------------------------------===//
-// Toy Operations
-//===----------------------------------------------------------------------===//
+class Toy_Op<string mnemonic, list<Trait> traits = []>
+    : Op<Toy_Dialect, mnemonic, traits>;
 
-// Base class for Toy dialect ops
-class Toy_Op<string mnemonic, list<Trait> traits = []> :
-    Op<Toy_Dialect, mnemonic, traits>;
-
-def Toy_AddOp : Toy_Op<"add", [Pure]> {
-  let summary = "element-wise addition operation";
+def Toy_AddOp : Toy_Op<"add"> {
+  let arguments = (ins AnyType:$lhs, AnyType:$rhs);
+  let results = (outs AnyType:$output);
+  let summary = "Toy addition op";
   let description = [{
-    The "add" operation performs element-wise addition between two tensors.
-    
-    Example:
-      %result = toy.add %lhs, %rhs : tensor<?xf64>
+    Adds two tensors elementwise. TODO: constrain shapes and element types.
   }];
-
-  let arguments = (ins AnyTensor:$lhs, AnyTensor:$rhs);
-  let results = (outs AnyTensor:$result);
 }
 
-def Toy_MulOp : Toy_Op<"mul", [Pure]> {
-  let summary = "element-wise multiplication operation";
+def Toy_MulOp : Toy_Op<"mul"> {
+  let arguments = (ins AnyType:$lhs, AnyType:$rhs);
+  let results = (outs AnyType:$output);
+  let summary = "Toy multiplication op";
   let description = [{
-    The "mul" operation performs element-wise multiplication between two tensors.
-    
-    Example:
-      %result = toy.mul %lhs, %rhs : tensor<?xf64>
+    Multiplies two tensors elementwise. TODO: define shape inference.
   }];
-
-  let arguments = (ins AnyTensor:$lhs, AnyTensor:$rhs);
-  let results = (outs AnyTensor:$result);
 }
 
 #endif // TOY_OPS_TD

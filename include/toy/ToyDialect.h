@@ -1,9 +1,3 @@
-//===- ToyDialect.h - Toy dialect -------------------------------*- C++ -*-===//
-//
-// Toy dialect header.
-//
-//===----------------------------------------------------------------------===//
-
 #ifndef TOY_TOYDIALECT_H
 #define TOY_TOYDIALECT_H
 
@@ -14,11 +8,10 @@ class DialectRegistry;
 }
 
 namespace toy {
-
-void registerToyDialect(mlir::DialectRegistry &registry);
-
+    void registerToyDialect(mlir::DialectRegistry &registry);
 } // namespace toy
 
 #include "ToyDialect.h.inc"
 
 #endif // TOY_TOYDIALECT_H
+
