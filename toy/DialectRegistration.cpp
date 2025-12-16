@@ -1,11 +1,5 @@
-//===- DialectRegistration.cpp - Toy dialect registration ----------------===//
-//
-// Registers the Toy dialect with MLIR.
-//
-//===----------------------------------------------------------------------===//
-
-#include "toy/ToyDialect.h"
 #include "mlir/IR/DialectRegistry.h"
+#include "toy/ToyDialect.h"
 
 using namespace mlir;
 using namespace toy;

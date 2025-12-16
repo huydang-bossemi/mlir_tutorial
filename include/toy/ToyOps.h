@@ -1,9 +1,3 @@
-//===- ToyOps.h - Toy dialect operations ------------------------*- C++ -*-===//
-//
-// Toy operations header.
-//
-//===----------------------------------------------------------------------===//
-
 #ifndef TOY_TOYOPS_H
 #define TOY_TOYOPS_H
 

@@ -1,20 +1,14 @@
-//===- ToyDialect.td - Toy dialect definition --------------*- tablegen -*-===//
-//
-// Defines the Toy dialect.
-//
-//===----------------------------------------------------------------------===//
-
 #ifndef TOY_DIALECT_TD
 #define TOY_DIALECT_TD
 
+include "mlir/IR/DialectBase.td"
 include "mlir/IR/OpBase.td"
 
 def Toy_Dialect : Dialect {
   let name = "toy";
-  let summary = "A simple toy dialect for MLIR tutorial";
+  let summary = "Toy dialect for tutorial purposes";
   let description = [{
-    This dialect provides basic arithmetic operations on tensors
-    for educational purposes.
+    The Toy dialect is a simple dialect for demonstrating MLIR concepts.
   }];
   let cppNamespace = "::toy";
 }

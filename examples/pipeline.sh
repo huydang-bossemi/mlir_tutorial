@@ -1,42 +1,25 @@
-#!/bin/bash
+#!/usr/bin/env bash
+set -euo pipefail
 
-set -e
+SCRIPT_DIR=$(cd -- "$(dirname "${BASH_SOURCE[0]}")" && pwd)
+PROJECT_ROOT=$(cd -- "${SCRIPT_DIR}/.." && pwd)
+BUILD_DIR=${BUILD_DIR:-"${PROJECT_ROOT}/build"}
+TOY_OPT=${TOY_OPT:-"${BUILD_DIR}/bin/toy-opt"}
+ALT_TOY_OPT="${BUILD_DIR}/tools/toy-opt"
+INPUT=${1:-"${SCRIPT_DIR}/intro.toy"}
 
-# Find toy-opt binary
-if [ -f "build/tools/toy-opt" ]; then
-    TOY_OPT="build/tools/toy-opt"
-else
-    echo "Error: toy-opt not found in build/tools/"
-    echo "Please build the project first:"
-    echo "  mkdir build && cd build"
-    echo "  cmake -G Ninja .. -DMLIR_DIR=<path> -DLLVM_DIR=<path>"
-    echo "  ninja"
+if [ ! -x "${TOY_OPT}" ]; then
+  if [ -x "${ALT_TOY_OPT}" ]; then
+    TOY_OPT="${ALT_TOY_OPT}"
+  else
+    echo "error: ${TOY_OPT} (or ${ALT_TOY_OPT}) is missing. Build the project first." >&2
     exit 1
+  fi
 fi
 
-# Get input file
-INPUT="${1:-intro.toy}"
-
-if [ ! -f "$INPUT" ]; then
-    echo "Error: Input file '$INPUT' not found"
-    exit 1
-fi
-
-echo "========================================"
-echo "Running Toy optimization pipeline"
-echo "========================================"
-echo "Tool:  $TOY_OPT"
-echo "Input: $INPUT"
-echo "========================================"
-echo ""
-
-# Run the full pipeline
+set -x
 "${TOY_OPT}" "${INPUT}" \
   --allow-unregistered-dialect \
   --pass-pipeline='builtin.module(toy-full)' \
   -mlir-print-ir-after-all
-
-echo ""
-echo "========================================"
-echo "Pipeline complete!"
-echo "========================================"
+set +x

@@ -1,33 +1,25 @@
-//===- Passes.h - Toy pass declarations ------------------------*- C++ -*-===//
-//
-// Pass declarations for the Toy dialect.
-//
-//===----------------------------------------------------------------------===//
-
-#ifndef TOY_TRANSFORMS_PASSES_H
-#define TOY_TRANSFORMS_PASSES_H
+#ifndef TOY_PASSES_H
+#define TOY_PASSES_H
 
 #include "mlir/Pass/Pass.h"
 #include <memory>
 
 namespace toy {
-
-// Pass factory functions
 std::unique_ptr<mlir::Pass> createToyShapeInferencePass();
 std::unique_ptr<mlir::Pass> createToyCanonicalizePass();
-
-// Register all passes
+std::unique_ptr<mlir::Pass> createToyDCEPass();
+std::unique_ptr<mlir::Pass> createToyCSEPass();
+std::unique_ptr<mlir::Pass> createToyConstantFoldPass();
 void registerToyPasses();
-
-// Register pass pipelines
 void registerToyPassPipelines();
 
-// Detail namespace for registration helpers
 namespace detail {
 void registerToyShapeInferencePass();
 void registerToyCanonicalizePass();
-} // namespace detail
+void registerToyDCEPass();
+void registerToyCSEPass();
+void registerToyConstantFoldPass();
+}
+}
 
-} // namespace toy
-
-#endif // TOY_TRANSFORMS_PASSES_H
+#endif // TOY_PASSES_H
