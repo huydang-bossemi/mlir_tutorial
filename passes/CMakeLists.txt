@@ -4,6 +4,8 @@ add_mlir_library(toy-passes SHARED
   ToyDCEPass.cpp
   ToyCSEPass.cpp
   ToyConstantFoldPass.cpp
+  ToyToArithPass.cpp
+  ToyToLinalgPass.cpp
   Passes.cpp
   DEPENDS
   ToyOpsIncGen
@@ -14,6 +16,7 @@ add_mlir_library(toy-passes SHARED
   MLIRPass
   MLIRTransforms
   MLIRArithDialect
+  MLIRLinalgDialect
 )
 
 target_include_directories(toy-passes PUBLIC
