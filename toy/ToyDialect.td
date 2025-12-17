@@ -1,6 +1,3 @@
-#ifndef TOY_DIALECT_TD
-#define TOY_DIALECT_TD
-
 include "mlir/IR/DialectBase.td"
 include "mlir/IR/OpBase.td"
 
@@ -12,5 +9,3 @@ def Toy_Dialect : Dialect {
   }];
   let cppNamespace = "::toy";
 }
-
-#endif // TOY_DIALECT_TD

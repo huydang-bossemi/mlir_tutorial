@@ -361,24 +361,287 @@ void runOnOperation() override {
 
 ## Testing Your Passes
 
-### Create Test Files
+### Test Infrastructure
 
-Create `test/my-pass.mlir`:
+This project includes comprehensive test files for all major passes:
+
+| Pass                | Test File                       | Purpose                                    |
+| ------------------- | ------------------------------- | ------------------------------------------ |
+| Shape Inference     | `test/toy-shape-inference.mlir` | Verify tensor shape propagation            |
+| Canonicalization    | `test/toy-canonicalize.mlir`    | Verify operand ordering and normalization  |
+| Constant Folding    | `test/toy-constant-fold.mlir`   | Verify compile-time constant evaluation    |
+| CSE                 | `test/toy-cse.mlir`             | Verify duplicate computation elimination   |
+| DCE                 | `test/toy-dce.mlir`             | Verify unused operation removal            |
+
+### Running Tests
+
+**Run individual test:**
+```bash
+./build/tools/toy-opt test/toy-shape-inference.mlir -toy-shape-inference
+```
+
+**Run all tests:**
+```bash
+./scripts/run_tests.sh
+```
+
+### Writing Test Cases
+
+Tests use **FileCheck** syntax to verify transformations. FileCheck is LLVM's pattern matching tool for test files.
+
+**Basic FileCheck Example:**
 ```mlir
-// RUN: toy-opt %s --my-new-pass | FileCheck %s
+// RUN: toy-opt %s -toy-shape-inference | FileCheck %s
 
-func.func @test_pass(%arg0: tensor<2x3xf64>) -> tensor<2x3xf64> {
-  // CHECK: toy.add
-  %0 = toy.add %arg0, %arg0 : tensor<2x3xf64>
+// CHECK-LABEL: func.func @my_test
+func.func @my_test(%arg0: tensor<2x2xf64>) -> tensor<2x2xf64> {
+  // CHECK: %[[RESULT:.*]] = "toy.add"(%arg0, %arg0) : (tensor<2x2xf64>, tensor<2x2xf64>) -> tensor<2x2xf64>
+  %0 = "toy.add"(%arg0, %arg0) : (tensor<2x2xf64>, tensor<2x2xf64>) -> tensor<*xf64>
+  // CHECK: return %[[RESULT]] : tensor<2x2xf64>
+  return %0 : tensor<2x2xf64>
+}
+```
+
+**FileCheck Directives:**
+- `// RUN:` – Command to execute for this test
+- `// CHECK:` – Pattern that must appear in output
+- `// CHECK-LABEL:` – Marks start of a test case (resets pattern matching)
+- `%[[VAR]]` – Captures a value for later reference
+- `{{.*}}` – Matches any string (wildcard)
+- `// CHECK-NOT:` – Pattern that must NOT appear
+- `// CHECK-NEXT:` – Pattern must appear on immediately next line
+
+### Test Guidelines
+
+Follow these best practices when writing tests:
+
+1. **Descriptive Names**: Use clear function names that describe what is being tested
+   ```mlir
+   func.func @test_add_with_constants() { ... }
+   func.func @test_shape_inference_chained_ops() { ... }
+   ```
+
+2. **Single Responsibility**: Each test function should verify one specific behavior
+   ```mlir
+   // Good: Tests one thing
+   func.func @test_add_canonicalization() { ... }
+   
+   // Avoid: Tests too many things
+   func.func @test_everything() { ... }
+   ```
+
+3. **CHECK Labels**: Always use `CHECK-LABEL` to separate test cases
+   ```mlir
+   // CHECK-LABEL: func.func @test_one
+   func.func @test_one() { ... }
+   
+   // CHECK-LABEL: func.func @test_two
+   func.func @test_two() { ... }
+   ```
+
+4. **Coverage**: Test edge cases, boundary conditions, and typical use cases
+   - Empty tensors
+   - 1D, 2D, 3D+ tensors
+   - Chained operations
+   - Already optimized IR (no-op tests)
+
+5. **Documentation**: Add comments explaining complex test scenarios
+   ```mlir
+   // Test that shape inference works through multiple operations
+   // where intermediate results have unranked types
+   ```
+
+### Shape Inference Test Patterns
+
+The shape inference pass converts unranked tensor types (`tensor<*xf64>`) to ranked types based on operand shapes.
+
+**Example test case:**
+```mlir
+// CHECK-LABEL: func.func @test_add_shape_inference
+func.func @test_add_shape_inference(%arg0: tensor<2x3xf64>, %arg1: tensor<2x3xf64>) -> tensor<2x3xf64> {
+  // Operation has unranked result, but operands have concrete shapes
+  // CHECK: %[[RESULT:.*]] = "toy.add"(%arg0, %arg1) : (tensor<2x3xf64>, tensor<2x3xf64>) -> tensor<2x3xf64>
+  %0 = "toy.add"(%arg0, %arg1) : (tensor<2x3xf64>, tensor<2x3xf64>) -> tensor<*xf64>
+  // CHECK: return %[[RESULT]] : tensor<2x3xf64>
   return %0 : tensor<2x3xf64>
 }
 ```
 
-### Run Tests
+**Key patterns to test:**
+- Basic AddOp and MulOp with unranked results
+- Chained operations with shape propagation
+- Various tensor ranks (1D, 2D, 3D, higher dimensions)
+- Already ranked results (should remain unchanged)
+- Complex computation graphs with mixed ranked/unranked types
+
+**Test cases in `toy-shape-inference.mlir`:**
+```mlir
+test_add_shape_inference        // Basic AddOp shape inference
+test_mul_shape_inference        // Basic MulOp shape inference
+test_chained_operations         // Multiple ops in sequence
+test_1d_tensors                 // 1D tensor shapes
+test_higher_rank_tensors        // 3D and higher dimensions
+test_already_ranked             // No-op when already ranked
+test_complex_computation        // Complex computation graph
+```
+
+### Canonicalize Test Patterns
+
+The canonicalize pass normalizes IR by standardizing operand order for commutative operations.
+
+**Example test case:**
+```mlir
+// CHECK-LABEL: func.func @test_add_canonicalization
+func.func @test_add_canonicalization(%arg0: tensor<2x2xf64>, %arg1: tensor<2x2xf64>) -> tensor<2x2xf64> {
+  // Operands may be reordered based on SSA value pointers
+  // CHECK: %[[RESULT:.*]] = "toy.add"({{%arg[0-1]}}, {{%arg[0-1]}}) : (tensor<2x2xf64>, tensor<2x2xf64>) -> tensor<2x2xf64>
+  %0 = "toy.add"(%arg1, %arg0) : (tensor<2x2xf64>, tensor<2x2xf64>) -> tensor<2x2xf64>
+  // CHECK: return %[[RESULT]]
+  return %0 : tensor<2x2xf64>
+}
+```
+
+**Key patterns to test:**
+- Operand reordering for AddOp and MulOp (commutative operations)
+- Multiple operations requiring canonicalization
+- Intermediate SSA values
+- Same-operand operations (idempotent - should remain unchanged)
+- Chained commutative operations
+- Various tensor shapes
+
+**Test cases in `toy-canonicalize.mlir`:**
+```mlir
+test_add_canonicalization       // AddOp operand reordering
+test_mul_canonicalization       // MulOp operand reordering
+test_multiple_ops               // Multiple ops in one function
+test_intermediate_values        // Canonicalize with SSA values
+test_same_operand               // Operations like add(%0, %0)
+test_chained_commutative        // Chain of commutative operations
+test_different_shapes           // Various tensor dimensions
+test_idempotent                 // Multiple operations per function
+```
+
+### Constant Folding Test Patterns
+
+**Example test case:**
+```mlir
+// CHECK-LABEL: func.func @test_constant_fold_add
+func.func @test_constant_fold_add() -> tensor<2x2xf64> {
+  %c0 = arith.constant dense<[[1.0, 2.0], [3.0, 4.0]]> : tensor<2x2xf64>
+  %c1 = arith.constant dense<[[5.0, 6.0], [7.0, 8.0]]> : tensor<2x2xf64>
+  // CHECK: %[[RESULT:.*]] = arith.constant dense<{{\[\[}}6.{{.*}}, 8.{{.*}}{{\]\]}}> : tensor<2x2xf64>
+  %sum = "toy.add"(%c0, %c1) : (tensor<2x2xf64>, tensor<2x2xf64>) -> tensor<2x2xf64>
+  // CHECK: return %[[RESULT]]
+  return %sum : tensor<2x2xf64>
+}
+```
+
+### CSE Test Patterns
+
+**Example test case:**
+```mlir
+// CHECK-LABEL: func.func @test_cse_duplicate_add
+func.func @test_cse_duplicate_add(%arg0: tensor<2x2xf64>, %arg1: tensor<2x2xf64>) -> tensor<2x2xf64> {
+  // First operation
+  // CHECK: %[[ADD:.*]] = "toy.add"(%arg0, %arg1)
+  %0 = "toy.add"(%arg0, %arg1) : (tensor<2x2xf64>, tensor<2x2xf64>) -> tensor<2x2xf64>
+  %1 = "toy.mul"(%0, %arg0) : (tensor<2x2xf64>, tensor<2x2xf64>) -> tensor<2x2xf64>
+  // Duplicate operation - should be eliminated
+  // CHECK-NOT: "toy.add"(%arg0, %arg1)
+  %2 = "toy.add"(%arg0, %arg1) : (tensor<2x2xf64>, tensor<2x2xf64>) -> tensor<2x2xf64>
+  // Should reuse %0
+  // CHECK: "toy.mul"(%[[ADD]], %arg1)
+  %3 = "toy.mul"(%2, %arg1) : (tensor<2x2xf64>, tensor<2x2xf64>) -> tensor<2x2xf64>
+  return %3 : tensor<2x2xf64>
+}
+```
+
+### DCE Test Patterns
+
+**Example test case:**
+```mlir
+// CHECK-LABEL: func.func @test_dce_unused_op
+func.func @test_dce_unused_op(%arg0: tensor<2x2xf64>, %arg1: tensor<2x2xf64>) -> tensor<2x2xf64> {
+  %0 = "toy.add"(%arg0, %arg1) : (tensor<2x2xf64>, tensor<2x2xf64>) -> tensor<2x2xf64>
+  // This operation is unused and should be eliminated
+  // CHECK-NOT: "toy.mul"(%arg0, %arg1)
+  %1 = "toy.mul"(%arg0, %arg1) : (tensor<2x2xf64>, tensor<2x2xf64>) -> tensor<2x2xf64>
+  // CHECK: return
+  return %0 : tensor<2x2xf64>
+}
+```
+
+### Debugging Failed Tests
+
+When a test fails, follow these steps:
+
+**1. Run the test manually and examine output:**
+```bash
+./build/tools/toy-opt test/toy-shape-inference.mlir -toy-shape-inference
+```
+
+**2. Use debug flags for verbose output:**
+```bash
+./build/tools/toy-opt test/toy-shape-inference.mlir -toy-shape-inference -debug
+```
+
+**3. Print IR after each transformation:**
+```bash
+./build/tools/toy-opt test/toy-shape-inference.mlir -toy-shape-inference \
+  --mlir-print-ir-after-all
+```
+
+**4. Print IR before and after:**
+```bash
+./build/tools/toy-opt test/toy-shape-inference.mlir -toy-shape-inference \
+  --mlir-print-ir-before-all \
+  --mlir-print-ir-after-all
+```
+
+**5. Use diff to compare expected vs actual:**
+```bash
+# Generate expected output
+cat > expected.mlir << 'EOF'
+// Expected IR here
+EOF
+
+# Run pass and compare
+./build/tools/toy-opt test/toy-shape-inference.mlir -toy-shape-inference > actual.mlir
+diff expected.mlir actual.mlir
+```
+
+**6. Enable pass statistics:**
+```bash
+./build/tools/toy-opt test/toy-shape-inference.mlir -toy-shape-inference \
+  --mlir-pass-statistics
+```
+
+### Quick Reference: Test Commands
 
 ```bash
-./build/tools/toy-opt test/my-pass.mlir --my-new-pass
+# Run single test
+./build/tools/toy-opt test/toy-shape-inference.mlir -toy-shape-inference
+
+# Run all tests
+./test/run_tests.sh
+
+# Run with debug output
+./build/tools/toy-opt test/toy-shape-inference.mlir -toy-shape-inference -debug
+
+# Run with IR printing
+./build/tools/toy-opt test/toy-shape-inference.mlir -toy-shape-inference \
+  --mlir-print-ir-after-all
+
+# Run with pass statistics
+./build/tools/toy-opt test/toy-shape-inference.mlir -toy-shape-inference \
+  --mlir-pass-statistics
+
+# Test specific pass pipeline
+./build/tools/toy-opt test/toy-shape-inference.mlir \
+  --pass-pipeline='builtin.module(toy-shape-inference,toy-canonicalize)'
 ```
+
+For more details on test structure and FileCheck syntax, see `test/README.md`.
 
 ## Debugging Passes
 
@@ -396,14 +659,6 @@ void runOnOperation() override {
   llvm::outs() << "After transformation:\n";
   func.dump();
 }
-```
-
-### Use `-mlir-print-ir-*` Flags
-
-```bash
-toy-opt input.mlir --pass-pipeline='toy-full' \
-  --mlir-print-ir-before-all \
-  --mlir-print-ir-after-all
 ```
 
 ### Enable Diagnostics

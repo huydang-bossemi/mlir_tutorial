@@ -20,6 +20,6 @@ fi
 set -x
 "${TOY_OPT}" "${INPUT}" \
   --allow-unregistered-dialect \
-  --pass-pipeline='builtin.module(toy-full)' \
+  --pass-pipeline='builtin.module(toy-frontend)' \
   -mlir-print-ir-after-all
 set +x

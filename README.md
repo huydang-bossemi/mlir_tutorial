@@ -18,16 +18,6 @@ A tiny project skeleton that demonstrates how to build an MLIR-based toy dialect
 
 ## Configure & Build
 
-There is an available Docker image on Wormhole server so user just need to run:
-
-```bash
-./scripts/docker_run.sh
-```
-
-And a container with name **mlir-tutorial-<USER_NAME>** will be ready to used.
-
-Commands to build the repo:
-
 ```bash
 apt-get update
 apt-get install -y zlib1g-dev libtinfo-dev libedit-dev libxml2-dev
@@ -44,17 +34,28 @@ The configuration step automatically adds the Toy dialect library (`toy-dialect`
 
 1. Build the project (generates `build/tools/toy-opt`).
 2. (Optional) Source your MLIR environment for extra tooling like `mlir-translate`.
-3. Execute the helper script:
+3. Execute the example script:
    ```bash
    ./examples/pipeline.sh
    ```
-  The script feeds `examples/intro.toy` into `toy-opt`, executes the Toy pipeline (`toy-shape-inference`, `toy-canonicalize`, ...), and prints each IR stage.
+  The script feeds `examples/intro.toy` into `toy-opt`, executes the Toy pipeline (`toy-shape-inference`, `toy-canonicalize`, `toy-constant-fold`, `toy-dce`, `toy-cse`), and prints each IR stage. Extend it to finish the lowering story.
+
+## Docker Workflow
+
+```bash
+cd docker
+./docker_build.sh
+# optional: docker run --rm -it -v $(pwd)/..:/workspace mlir-tutorial /bin/bash
+```
+
+Inside the container, configure & build exactly as above.
 
 ## Learning Objectives
 
 - Understand how MLIR dialects are defined via TableGen and C++ scaffolding.
 - Implement operation builders, printers, and verifiers.
 - Write analysis / transformation passes and chain them into pipelines.
+- Lower custom dialect IR to the LinAlg/Arith dialects.
 - Use MLIR tooling (`mlir-opt`, `mlir-translate`, pass pipelines) for debugging.
 
 Dive into `docs/00_overview.md` to get started!

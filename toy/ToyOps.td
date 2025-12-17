@@ -1,13 +1,11 @@
-#ifndef TOY_OPS_TD
-#define TOY_OPS_TD
-
 include "mlir/IR/OpBase.td"
+include "mlir/Interfaces/SideEffectInterfaces.td"
 include "ToyDialect.td"
 
 class Toy_Op<string mnemonic, list<Trait> traits = []>
     : Op<Toy_Dialect, mnemonic, traits>;
 
-def Toy_AddOp : Toy_Op<"add"> {
+def Toy_AddOp : Toy_Op<"add", [Pure]> {
   let arguments = (ins AnyType:$lhs, AnyType:$rhs);
   let results = (outs AnyType:$output);
   let summary = "Toy addition op";
@@ -16,7 +14,7 @@ def Toy_AddOp : Toy_Op<"add"> {
   }];
 }
 
-def Toy_MulOp : Toy_Op<"mul"> {
+def Toy_MulOp : Toy_Op<"mul", [Pure]> {
   let arguments = (ins AnyType:$lhs, AnyType:$rhs);
   let results = (outs AnyType:$output);
   let summary = "Toy multiplication op";
@@ -24,5 +22,3 @@ def Toy_MulOp : Toy_Op<"mul"> {
     Multiplies two tensors elementwise. TODO: define shape inference.
   }];
 }
-
-#endif // TOY_OPS_TD
