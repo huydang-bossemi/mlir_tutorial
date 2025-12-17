@@ -391,49 +391,6 @@ Error: block argument type doesn't match tensor element type
 ```
 **Solution**: Ensure block argument types match tensor element types (f64 for tensor<...xf64>)
 
-### Integration Testing
-
-Test the complete pipeline from Toy to Linalg:
-
-```bash
-# Create a complete test
-cat > test/integration-lowering.mlir << 'EOF'
-func.func @integration_test(%a: tensor<2x3xf64>, %b: tensor<2x3xf64>) -> tensor<2x3xf64> {
-  %0 = "toy.add"(%a, %b) : (tensor<2x3xf64>, tensor<2x3xf64>) -> tensor<*xf64>
-  %1 = "toy.mul"(%0, %a) : (tensor<*xf64>, tensor<2x3xf64>) -> tensor<*xf64>
-  return %1 : tensor<2x3xf64>
-}
-EOF
-
-# Run complete pipeline
-./build/tools/toy-opt test/integration-lowering.mlir \
-  -toy-shape-inference \
-  -toy-canonicalize \
-  -toy-to-linalg \
-  --mlir-print-ir-after-all
-```
-
-### Performance Testing
-
-After lowering, verify that Linalg optimizations can be applied:
-
-```bash
-# Test that linalg fusion works
-./build/tools/toy-opt test/toy-lowering.mlir \
-  -toy-to-linalg \
-  -linalg-fuse-elementwise-ops
-
-# Test tiling
-./build/tools/toy-opt test/toy-lowering.mlir \
-  -toy-to-linalg \
-  -linalg-tile="tile-sizes=4,4"
-
-# Test vectorization
-./build/tools/toy-opt test/toy-lowering.mlir \
-  -toy-to-linalg \
-  -linalg-vectorization
-```
-
 ### Quick Reference: Lowering Test Commands
 
 ```bash
